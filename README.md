@@ -90,7 +90,7 @@ Use the contact button at the top right or scroll to the bottom and fill out the
 
 - Lifelong learner, IT enthusiast, and self-hosting geek.
 - Currently studying Master of Information Technology (Software Development).
-- Certified Azure Developer Associate.
+- (working towards) *Certified Azure Developer Associate.
 
 ---
 
@@ -124,9 +124,7 @@ homelab-showcase/
 ├── LICENSE
 ├── docs/
 │   └── screenshots/
-│       ├── network-diagram.png
-│       ├── hardware-rack.png
-│       └── services.png
+│       ├── network-diagram.svg
 ```
 
 ---
@@ -142,3 +140,4 @@ homelab-showcase/
 ---
 
 **Made by [caeljk](https://github.com/caeljk)**
+// edited copilot errors in readme.
