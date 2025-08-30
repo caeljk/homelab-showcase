@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Homelab Showcase</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Vis.js for Network Diagram -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #d1d5db; /* text-gray-300 */
+        }
+        body.no-scroll {
+            overflow: hidden;
+        }
+        #pcb-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Place it behind all other content */
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #4f46e5, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Blinking cursor for dynamic title */
+        #cursor {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+        .card {
+            background-color: rgba(31, 41, 55, 0.8); /* bg-gray-800 with some transparency */
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px); /* Frosted glass effect */
+            background-clip: text;
+            
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .icon-placeholder {
+             width: 48px;
+             height: 48px;
+             background-color: #374151; /* bg-gray-700 */
+             border-radius: 0.5rem; /* rounded-lg */
+        }
+        /* Modal Styles */
+        .modal-backdrop.hidden {
+            display: none;
+        }
+        .modal {
+             background-color: rgba(31, 41, 55, 0.8);
+             -webkit-backdrop-filter: blur(8px);
+             backdrop-filter: blur(8px);
+        }
+        #ai-modal-input-container.hidden { display: none; }
+        .modal-body p { margin-bottom: 1rem; }
+        .modal-body ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .modal-body li { margin-bottom: 0.5rem; }
+        .modal-body h3 { font-size: 1.25rem; font-weight: 600; color: #fff; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .chat-message { padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.75rem; max-width: 90%; }
+        .chat-message.user { background-color: #4f46e5; color: white; margin-left: auto; text-align: right; }
+        .chat-message.model { background-color: #374151; color: #d1d5db; margin-right: auto; }
+        
+        /* -- Flip Card Styles -- */
+        .flip-card { background-color: transparent; min-height: 200px; perspective: 1000px; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card:hover .flip-card-inner, .flip-card.is-flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 0.5rem; }
+        .flip-card-back { background-color: rgba(55, 65, 81, 0.9); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); color: white; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .flip-card-front { background-color: transparent; }
+
+        /* -- "Who Am I" Section Styles -- */
+        #whoami-section {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background-color: #111827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%);
+            transition: clip-path 0.8s cubic-bezier(0.83, 0, 0.17, 1);
+        }
+        #whoami-section.is-visible {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        #whoami-close-btn {
+            position: absolute;
+            top: 2rem; right: 2rem; font-size: 2.5rem; color: #9ca3af;
+            background: none; border: none; cursor: pointer;
+            transition: transform 0.3s, color 0.3s;
+        }
+        #whoami-close-btn:hover { color: #fff; transform: rotate(90deg); }
+
+        /* -- Contact Button -- */
+        #contact-btn {
+            position: fixed;
+            top: 1.5rem; right: 1.5rem;
+            z-index: 50;
+            background-color: rgba(31, 41, 55, 0.7);
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            padding: 0.75rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        #contact-btn:hover { transform: scale(1.1); }
+        
+        /* -- Network Diagram Styles -- */
+        #network-diagram-container, #static-diagram-image {
+            height: 600px;
+        }
+        #network-diagram-container {
+            background-color: rgba(17, 24, 39, 0.7); /* bg-gray-900 with transparency */
+            border-radius: 0.5rem;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151;
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+    
+    <!-- Contact Button -->
+    <button id="contact-btn" title="Contact Me">
+        <span class="text-2xl">📬</span>
+    </button>
+
+    <!-- Main page content container -->
+    <div id="main-content">
+        <!-- Dynamic Background Canvas -->
+        <canvas id="pcb-background"></canvas>
+
+        <!-- Header -->
+        <header class="py-6 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-5xl mx-auto text-center">
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+                    Welcome to <span class="gradient-text" id="dynamic-title-text"></span><span class="gradient-text" id="cursor">|</span>
+                </h1>
+                <p class="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">
+                    A personal playground for exploring technology, self-hosting services, and tinkering with enterprise-grade hardware.
+                </p>
+            </div>
+        </header>
+
+        <main class="py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-5xl mx-auto space-y-20">
+                <!-- Hardware Section -->
+                <section id="hardware">
+                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-indigo-500 pl-4">Hardware Rack</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        
+                        <div class="card p-6 rounded-lg md:col-span-2">
+                            <div class="flex items-center mb-4">
+                                <div class="icon-placeholder flex items-center justify-center">
+                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+                                </div>
+                                <h3 class="ml-4 text-xl font-semibold text-white">Gaming & AI Rig</h3>
+                            </div>
+                            <p class="text-gray-400">Primary Workstation</p>
+                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
+                                <li><span class="font-medium text-gray-200">CPU:</span> Ryzen 5 5600X3D</li>
+                                <li><span class="font-medium text-gray-200">GPU:</span> GeForce RTX 4060 OC</li>
+                                <li><span class="font-medium text-gray-200">RAM:</span> 32GB DDR4</li>
+                                <li><span class="font-medium text-gray-200">Storage:</span> 1TB M.2 NVMe, 2x 1TB SSDs</li>
+                                <li><span class="font-medium text-gray-200">OS:</span> Dual-boot Windows 11 & Linux</li>
+                                <li><span class="font-medium text-gray-200">Role:</span> Active Directory Controller</li>
+                            </ul>
+                        </div>
+                        <div class="card p-6 rounded-lg">
+                            <div class="flex items-center mb-4">
+                                <div class="icon-placeholder flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                                </div>
+                                <h3 class="ml-4 text-xl font-semibold text-white">Primary Server</h3>
+                            </div>
+                            <p class="text-gray-400">HP ProDesk 400 G3 SFF</p>
+                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
+                                <li><span class="font-medium text-gray-200">CPU:</span> i3 6320 @ 3.9GHz</li>
+                                <li><span class="font-medium text-gray-200">RAM:</span> 8GB</li>
+                                <li><span class="font-medium text-gray-200">Storage:</span> 1TB</li>
+                                <li><span class="font-medium text-gray-200">OS:</span> Ubuntu LTS 22.04</li>
+                            </ul>
+                        </div>
+                        <div class="card p-6 rounded-lg">
+                             <div class="flex items-center mb-4">
+                                <div class="icon-placeholder flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                </div>
+                                <h3 class="ml-4 text-xl font-semibold text-white">Headless Node</h3>
+                            </div>
+                            <p class="text-gray-400">Acer Laptop (Custom Build)</p>
+                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
+                                <li><span class="font-medium text-gray-200">CPU:</span> AMD A8 APU</li>
+                                <li><span class="font-medium text-gray-200">RAM:</span> 16GB</li>
+                                <li><span class="font-medium text-gray-200">Storage:</span> 2TB</li>
+                                <li><span class="font-medium text-gray-200">OS:</span> Ubuntu LTS 22.04</li>
+                                <li><span class="font-medium text-gray-200">Info:</span> Headless, custom cooling, no battery</li>
+                            </ul>
+                        </div>
+                        <div class="card p-6 rounded-lg md:col-span-2">
+                            <div class="flex items-center mb-4">
+                                <div class="icon-placeholder flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                                </div>
+                                <h3 class="ml-4 text-xl font-semibold text-white">Networking Gear</h3>
+                            </div>
+                            <p class="text-gray-400">Custom Stack</p>
+                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
+                                <li><span class="font-medium text-gray-200">Firewall:</span> Datto Alto 3 (OPNsense)</li>
+                                <li><span class="font-medium text-gray-200">Security:</span> CrowdSec Bouncer</li>
+                                <li><span class="font-medium text-gray-200">AP:</span> Nighthawk Mesh WiFi 6 (MR60 & MS60)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="ai-features">
+                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-green-500 pl-4">Homelab Insights</h2>
+                    <div class="card rounded-lg p-6 text-center">
+                        <p class="text-gray-400 mb-6">Use the power of AI to learn more about this setup or get ideas for your own projects.</p>
+                        <div class="flex flex-col sm:flex-row justify-center gap-4 flex-wrap">
+                            <button id="explain-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                ✨ Explain My Setup
+                            </button>
+                            <button id="suggest-btn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6-2.93 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" /><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" /></svg>
+                                ✨ Suggest New Projects
+                            </button>
+                            <button id="security-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5.023L2 5.054a12.006 12.006 0 00-1 7.054c0 1.66.168 3.317.502 4.905L2 17l1.5-1.5a11.956 11.956 0 01-1.44-3.114A11.91 11.91 0 0110 18a12.006 12.006 0 007.44-2.553L18 17l-1.5-1.5a11.956 11.956 0 011.44-3.114A11.91 11.91 0 0110 2a11.954 11.954 0 01-7.834 3.023L2 5.054z" clip-rule="evenodd" /></svg>
+                                ✨ Run Quick Security Check
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="services">
+                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-pink-500 pl-4">Self-Hosted Services</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        <!-- Service Flip Cards -->
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/authentik.svg" alt="Authentik Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Authentik</h4><p class="text-sm text-gray-400">Identity Provider</p></div><div class="flip-card-back"><p class="text-sm">Central identity provider for all my services, handling SSO and security policies.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.worldvectorlogo.com/logos/memcached.svg" alt="Memcached Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Memcached</h4><p class="text-sm text-gray-400">In-Memory Cache</p></div><div class="flip-card-back"><p class="text-sm">Used to speed up specific applications that require fast caching.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/redis.svg" alt="Redis Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Redis</h4><p class="text-sm text-gray-400">In-Memory Cache</p></div><div class="flip-card-back"><p class="text-sm">High-performance cache and message broker for various services.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://www.svgrepo.com/show/323619/watchtower.svg" alt="Watchtower Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Watchtower</h4><p class="text-sm text-gray-400">Container Updates</p></div><div class="flip-card-back"><p class="text-sm">Automatically keeps all my Docker containers up-to-date with the latest versions.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/paperless-ngx.svg" alt="Paperless-ngx Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Paperless-ngx</h4><p class="text-sm text-gray-400">Document Management</p></div><div class="flip-card-back"><p class="text-sm">My digital filing cabinet. Scans, indexes, and archives all my physical documents.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://www.svgrepo.com/show/354522/visual-studio-code.svg" alt="VSCode Server Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">VSCode Server</h4><p class="text-sm text-gray-400">Remote IDE</p></div><div class="flip-card-back"><p class="text-sm">Allows me to code on any machine through a web browser with my full VSCode setup.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/freshrss.svg" alt="FreshRSS Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">FreshRSS</h4><p class="text-sm text-gray-400">RSS Aggregator</p></div><div class="flip-card-back"><p class="text-sm">Keeps me updated with my favorite blogs and news sites without ads or algorithms.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/adguard-home.svg" alt="AdGuard Home Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">AdGuard Home</h4><p class="text-sm text-gray-400">Ad Blocking</p></div><div class="flip-card-back"><p class="text-sm">Network-wide ad and tracker blocking for all devices on my network.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg" alt="Jellyfin Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Jellyfin</h4><p class="text-sm text-gray-400">Media Server</p></div><div class="flip-card-back"><p class="text-sm">Organizes and streams my personal movie and TV show collection to any device.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/navidrome.svg" alt="Navidrome Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Navidrome</h4><p class="text-sm text-gray-400">Music Server</p></div><div class="flip-card-back"><p class="text-sm">My personal music streaming service, like Spotify but with my own library.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/home-assistant-alt.svg" alt="Home Assistant Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Home Assistant</h4><p class="text-sm text-gray-400">Home Automation</p></div><div class="flip-card-back"><p class="text-sm">The brain of my smart home. Automates lighting, sensors, and more.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/pi-hole-unbound.png" alt="Pi-hole Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Pi-hole (x2)</h4><p class="text-sm text-gray-400">DNS Sinkhole (HA)</p></div><div class="flip-card-back"><p class="text-sm">Primary and secondary DNS servers for ad-blocking and local DNS resolution.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/traefik.svg" alt="Traefik Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Traefik</h4><p class="text-sm text-gray-400">Reverse Proxy</p></div><div class="flip-card-back"><p class="text-sm">Manages incoming traffic and automatically handles SSL for my services.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg" alt="Audiobookshelf Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Audiobookshelf</h4><p class="text-sm text-gray-400">Audiobook Server</p></div><div class="flip-card-back"><p class="text-sm">Streams my audiobook and podcast collection, keeping track of my progress.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/glances-light.svg" alt="Glances Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Glances</h4><p class="text-sm text-gray-400">System Monitoring</p></div><div class="flip-card-back"><p class="text-sm">A quick, at-a-glance view of system resources across all my servers.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/prometheus.svg" alt="Prometheus Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Prometheus</h4><p class="text-sm text-gray-400">Metrics</p></div><div class="flip-card-back"><p class="text-sm">Collects detailed time-series metrics from all my applications and infrastructure.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/grafana.svg" alt="Grafana Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Grafana</h4><p class="text-sm text-gray-400">Dashboards</p></div><div class="flip-card-back"><p class="text-sm">Visualizes the data collected by Prometheus in beautiful, informative dashboards.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/forgejo.svg" alt="Forgejo Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Forgejo</h4><p class="text-sm text-gray-400">Git Server</p></div><div class="flip-card-back"><p class="text-sm">My private Git server for version control on all my personal coding projects.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/dozzle.svg" alt="Dozzle Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Dozzle</h4><p class="text-sm text-gray-400">Log Viewer</p></div><div class="flip-card-back"><p class="text-sm">A simple, real-time log viewer for all of my running Docker containers.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/portainer.svg" alt="Portainer Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Portainer</h4><p class="text-sm text-gray-400">Container Mgmt</p></div><div class="flip-card-back"><p class="text-sm">Easy-to-use UI for managing my Docker containers, volumes, and networks.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/trilium.svg" alt="Trilium Notes Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Trilium Notes</h4><p class="text-sm text-gray-400">Note Taking</p></div><div class="flip-card-back"><p class="text-sm">My personal knowledge base for hierarchical note-taking and organization.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/radicale.svg" alt="CalDAV Server Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">CalDAV Server</h4><p class="text-sm text-gray-400">Calendar Sync</p></div><div class="flip-card-back"><p class="text-sm">Self-hosted calendar server that syncs across all my devices.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/webdav.png" alt="WebDAV Server Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">WebDAV Server</h4><p class="text-sm text-gray-400">File Sync</p></div><div class="flip-card-back"><p class="text-sm">For simple, self-hosted file access and synchronization.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/homepage.png" alt="Intranet Sites Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Intranet Sites</h4><p class="text-sm text-gray-400">Internal Web</p></div><div class="flip-card-back"><p class="text-sm">Various internal-only websites and tools for my home network.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/unbound.svg" alt="Unbound Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Unbound</h4><p class="text-sm text-gray-400">DNS Resolver</p></div><div class="flip-card-back"><p class="text-sm">A caching and recursive DNS resolver for improved privacy and performance.</p></div></div></div>
+                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/haproxy.svg" alt="HAProxy Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">HAProxy</h4><p class="text-sm text-gray-400">Load Balancer</p></div><div class="flip-card-back"><p class="text-sm">Provides high availability and load balancing for critical services like Pi-hole.</p></div></div></div>
+                    </div>
+                </section>
+
+                <section id="network-diagram-section">
+                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-teal-500 pl-4">Network Diagram</h2>
+                     <div class="card rounded-lg p-4">
+                        <p id="diagram-subtitle" class="text-center text-gray-400 mb-4">Click and drag to pan, use the scroll wheel to zoom, and click on any node for more info.</p>
+                        <div class="relative">
+                             <div id="diagram-views-container" class="relative w-full h-[600px] rounded-lg overflow-hidden">
+                                <!-- Interactive View -->
+                                <div id="network-diagram-container" class="absolute inset-0 transition-opacity duration-500 opacity-100"></div>
+                                <!-- Static Image View -->
+                                <img id="static-diagram-image" 
+                                     src="C:\Users\caelj\Desktop\coding\VS Code\Homelab_webpage\networkdiagram.svg"
+                                     alt="Static Network Diagram"
+                                     class="absolute inset-0 w-full h-full object-contain transition-opacity duration-500 opacity-0 pointer-events-none"
+                                     onerror="this.onerror=null;this.src='';"
+                                >
+                            </div>
+                            <!-- Toggle Button -->
+                            <button id="diagram-toggle-btn" title="Show Static Diagram" class="absolute top-1/2 -right-6 z-20 transform -translate-y-1/2 bg-gray-700 hover:bg-indigo-600 text-white font-bold w-12 h-12 rounded-full flex items-center justify-center transition-transform hover:scale-110">
+                                <svg id="arrow-right-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                                <svg id="arrow-left-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <footer class="mt-20 py-10 border-t border-gray-800">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <p class="text-gray-400">Scroll to the bottom to learn more about the creator.</p>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- "Who Am I" Hidden Section -->
+    <section id="whoami-section">
+        <button id="whoami-close-btn" title="Close">&times;</button>
+        <div class="text-center max-w-4xl mx-auto px-4 text-white">
+            <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">About Me</h2>
+            <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+                I'm passionate about IT and a lifelong learner with a love for building, tinkering, and automating. This homelab is my canvas, where I experiment with enterprise-grade technologies, sharpen my DevOps skills, and host services that bring convenience and privacy to my digital life. It started with an old laptop and a dream, and has grown into the ecosystem you see a glimpse of here. My goal is to create a secure, efficient, and fun environment that supports my hobbies and professional growth. 
+            </p>
+            <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+                When I'm not behind the screen, you can find me playing guitar, gaming, or exploring new tech trends. Feel free to reach out if you share similar interests or have questions about my setup!
+            </p>
+            <h3 class="text-3xl font-bold text-white mb-6 border-t border-gray-700 pt-8">Current Study</h3>
+            <ul class="list-none space-y-4 text-gray-300">
+                <li><strong class="text-indigo-400">Master of Information Technology (Software Development):</strong> Completing software engineering courses to strengthen my skills, with this TailwindCSS/node.js/Firebase and GeminiAPI AI calls to facilitate this project website as a start</li>
+                <li><strong class="text-indigo-400">Microsoft Certified: Azure Developer Associate:</strong> Learning to build end-to-end solutions in Microsoft Azure to create Azure Functions, implement and manage web apps, develop solutions utilizing Azure storage, and more.</li>
+            </ul>
+        </div>
+    </section>
+    <!-- AI / Info Modal -->
+    <div id="info-modal-backdrop" class="modal-backdrop hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[60]">
+        <div id="info-modal" class="modal bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h3 id="info-modal-title" class="text-xl font-bold text-white">AI Response</h3>
+                <button id="info-modal-close" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="info-modal-body" class="p-6 overflow-y-auto text-gray-300">
+                <div id="info-modal-loader" class="flex justify-center items-center h-40">
+                    <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <div id="info-modal-content" class="prose prose-invert max-w-none"></div>
+            </div>
+            <div id="ai-modal-input-container" class="hidden p-4 border-t border-gray-700">
+                <div class="flex gap-2">
+                    <input type="text" id="ai-follow-up-input" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ask a follow-up question...">
+                    <button id="ai-follow-up-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contact Modal -->
+    <div id="contact-modal-backdrop" class="modal-backdrop hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[60]">
+        <div id="contact-modal" class="modal bg-gray-800 rounded-lg shadow-xl w-full max-w-lg">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h3 class="text-xl font-bold text-white">Contact Me</h3>
+                <button id="contact-modal-close" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="contact-form">
+                    <div id="contact-form-content">
+                        <p class="text-gray-400 mb-4">Feel free to reach out. I'll get back to you as soon as I can.</p>
+                        <div class="mb-4">
+                            <label for="name" class="block text-gray-300 text-sm font-bold mb-2">Name</label>
+                            <input type="text" id="name" name="name" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="mb-4">
+                            <label for="email" class="block text-gray-300 text-sm font-bold mb-2">Email</label>
+                            <input type="email" id="email" name="email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="mb-6">
+                            <label for="message" class="block text-gray-300 text-sm font-bold mb-2">Message</label>
+                            <textarea id="message" name="message" rows="4" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <div class="flex items-center justify-end">
+                            <button type="submit" id="contact-submit-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                                Send Message
+                            </button>
+                        </div>
+                    </div>
+                    <div id="contact-success-message" class="hidden text-center py-8">
+                        <h4 class="text-2xl font-bold text-green-400 mb-2">Thank You!</h4>
+                        <p class="text-gray-300">Your message has been sent successfully.</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+<script type="module">
+    // Firebase Imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Dynamic Title Typing Effect ---
+        const dynamicTextElement = document.getElementById('dynamic-title-text');
+        const words = ["My Homelab", "My Playground", "My Digital Forge", "My Creation"];
+        let wordIndex = 0; let charIndex = 0; let isDeleting = false;
+        function typeEffect() {
+            const currentWord = words[wordIndex];
+            const currentChar = currentWord.substring(0, charIndex);
+            dynamicTextElement.textContent = currentChar;
+            dynamicTextElement.classList.add('gradient-text');
+            if (!isDeleting && charIndex < currentWord.length) {
+                charIndex++; setTimeout(typeEffect, 150);
+            } else if (isDeleting && charIndex > 0) {
+                charIndex--; setTimeout(typeEffect, 100);
+            } else {
+                isDeleting = !isDeleting;
+                if (!isDeleting) { wordIndex = (wordIndex + 1) % words.length; }
+                setTimeout(typeEffect, 1200);
+            }
+        }
+        typeEffect();
+
+        // --- Dynamic Background Setup ---
+        const canvas = document.getElementById('pcb-background');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particlesArray;
+        class Particle {
+            constructor(x, y, dX, dY, s, c) { this.x=x; this.y=y; this.directionX=dX; this.directionY=dY; this.size=s; this.color=c; }
+            draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2,false); ctx.fillStyle=this.color; ctx.fill(); }
+            update() {
+                if (this.x>canvas.width||this.x<0) { this.directionX = -this.directionX; }
+                if (this.y>canvas.height||this.y<0) { this.directionY = -this.directionY; }
+                this.x+=this.directionX; this.y+=this.directionY; this.draw();
+            }
+        }
+        function init() {
+            particlesArray = []; let num = (canvas.height * canvas.width) / 15000;
+            for (let i=0; i<num; i++) {
+                let size=(Math.random()*2)+1; let x=(Math.random()*((innerWidth-size*2)-(size*2))+size*2);
+                let y=(Math.random()*((innerHeight-size*2)-(size*2))+size*2);
+                let dX=(Math.random()*.4)-.2; let dY=(Math.random()*.4)-.2;
+                particlesArray.push(new Particle(x,y,dX,dY,size,'#059669'));
+            }
+        }
+        function connect() {
+            let opacity=1;
+            for (let a=0; a<particlesArray.length; a++) {
+                for (let b=a; b<particlesArray.length; b++) {
+                    let dist=((particlesArray[a].x-particlesArray[b].x)*(particlesArray[a].x-particlesArray[b].x))+((particlesArray[a].y-particlesArray[b].y)*(particlesArray[a].y-particlesArray[b].y));
+                    if(dist<(canvas.width/7)*(canvas.height/7)) {
+                        opacity=1-(dist/20000); ctx.strokeStyle=`rgba(5,150,105,${opacity})`; ctx.lineWidth=1;
+                        ctx.beginPath(); ctx.moveTo(particlesArray[a].x,particlesArray[a].y); ctx.lineTo(particlesArray[b].x,particlesArray[b].y); ctx.stroke();
+                    }
+                }
+            }
+        }
+        function animate() {
+            requestAnimationFrame(animate); ctx.fillStyle='#111827'; ctx.fillRect(0,0,innerWidth,innerHeight);
+            for(let i=0; i<particlesArray.length; i++) { particlesArray[i].update(); } connect();
+        }
+        window.addEventListener('resize', () => { canvas.width=innerWidth; canvas.height=innerHeight; init(); });
+        init(); animate();
+
+        // --- "Who Am I" Section Logic ---
+        const whoAmISection = document.getElementById('whoami-section');
+        const closeWhoAmIBtn = document.getElementById('whoami-close-btn');
+        let isWhoAmIVisible = false; let scrollTriggered = false;
+        function showWhoAmI() {
+            if (isWhoAmIVisible) return; isWhoAmIVisible = true;
+            whoAmISection.classList.add('is-visible'); document.body.classList.add('no-scroll');
+        }
+        function hideWhoAmI() {
+            if (!isWhoAmIVisible) return; isWhoAmIVisible = false;
+            whoAmISection.classList.remove('is-visible'); document.body.classList.remove('no-scroll');
+            window.scrollTo(0, document.body.scrollHeight - window.innerHeight - 50);
+            setTimeout(() => { scrollTriggered = false; }, 1000);
+        }
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 5 && !isWhoAmIVisible && !scrollTriggered) {
+                scrollTriggered = true; showWhoAmI();
+            }
+        });
+        closeWhoAmIBtn.addEventListener('click', hideWhoAmI);
+
+        // --- Firebase State & Init ---
+        let db, auth;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        async function initFirebase() {
+            try {
+                const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+                if (!firebaseConfigStr || firebaseConfigStr === '{}') { console.warn("Firebase config not found. Backend features will be disabled."); return; }
+                const firebaseConfig = JSON.parse(firebaseConfigStr);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (initialAuthToken) { await signInWithCustomToken(auth, initialAuthToken); } else { await signInAnonymously(auth); }
+            } catch (error) { console.error("Firebase initialization failed:", error); }
+        }
+        initFirebase();
+
+        // --- Contact Modal Logic ---
+        const contactBtn = document.getElementById('contact-btn');
+        const contactModalBackdrop = document.getElementById('contact-modal-backdrop');
+        const contactModalCloseBtn = document.getElementById('contact-modal-close');
+        const contactForm = document.getElementById('contact-form');
+        const contactFormContent = document.getElementById('contact-form-content');
+        const contactSuccessMessage = document.getElementById('contact-success-message');
+        const contactSubmitBtn = document.getElementById('contact-submit-btn');
+        function showContactModal() {
+            contactForm.reset();
+            contactFormContent.classList.remove('hidden');
+            contactSuccessMessage.classList.add('hidden');
+            contactModalBackdrop.classList.remove('hidden');
+        }
+        function hideContactModal() { contactModalBackdrop.classList.add('hidden'); }
+        contactBtn.addEventListener('click', showContactModal);
+        contactModalCloseBtn.addEventListener('click', hideContactModal);
+        contactModalBackdrop.addEventListener('click', (e) => { if (e.target === contactModalBackdrop) hideContactModal(); });
+        async function saveContactMessage(name, email, message) {
+            if (!db) { alert("Database is not connected. Message cannot be sent."); return; }
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/contact_me`;
+                await addDoc(collection(db, collectionPath), { name, email, message, createdAt: serverTimestamp() });
+                return true;
+            } catch (error) { console.error("Error saving contact message:", error); return false; }
+        }
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            contactSubmitBtn.disabled = true; contactSubmitBtn.textContent = 'Sending...';
+            const success = await saveContactMessage(contactForm.name.value, contactForm.email.value, contactForm.message.value);
+            if (success) {
+                contactFormContent.classList.add('hidden');
+                contactSuccessMessage.classList.remove('hidden');
+            } else { alert('There was an error sending your message. Please try again.'); }
+            contactSubmitBtn.disabled = false; contactSubmitBtn.textContent = 'Send Message';
+        });
+
+        // --- Info/AI Modal & Gemini API Logic ---
+        let conversationContext = [];
+        const infoModalBackdrop = document.getElementById('info-modal-backdrop');
+        const infoModalCloseBtn = document.getElementById('info-modal-close');
+        const infoModalTitle = document.getElementById('info-modal-title');
+        const infoModalLoader = document.getElementById('info-modal-loader');
+        const infoModalContent = document.getElementById('info-modal-content');
+        const aiModalInputContainer = document.getElementById('ai-modal-input-container');
+        const followUpInput = document.getElementById('ai-follow-up-input');
+        const followUpBtn = document.getElementById('ai-follow-up-btn');
+        
+        function showInfoModal(title, content) {
+            infoModalTitle.textContent = title;
+            infoModalContent.innerHTML = content;
+            infoModalLoader.classList.add('hidden');
+            aiModalInputContainer.classList.add('hidden');
+            infoModalBackdrop.classList.remove('hidden');
+        }
+        function hideInfoModal() {
+            infoModalBackdrop.classList.add('hidden');
+            if (conversationContext.length > 0) { saveConversation(conversationContext, infoModalTitle.textContent); }
+        }
+        infoModalCloseBtn.addEventListener('click', hideInfoModal);
+        infoModalBackdrop.addEventListener('click', (event) => { if (event.target === infoModalBackdrop) hideInfoModal(); });
+        async function saveConversation(history, title) {
+            if (!db || !auth.currentUser) { console.warn("Firestore not ready."); return; }
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/homelab-conversations`;
+                await addDoc(collection(db, collectionPath), { title: title, history: history, createdAt: serverTimestamp(), userId: auth.currentUser.uid });
+            } catch (error) { console.error("Error saving conversation:", error); }
+        }
+        function showAiModal(title) {
+            infoModalTitle.textContent = title; infoModalContent.innerHTML = '';
+            infoModalLoader.classList.remove('hidden'); infoModalBackdrop.classList.remove('hidden');
+            aiModalInputContainer.classList.add('hidden'); conversationContext = [];
+        }
+        async function callGeminiAPI(history, maxRetries = 3) {
+            // This URL points to the backend you host on your server.
+            const apiUrl = 'https://api.caeljk.duckdns.org/ask-gemini'; 
+
+            // The payload key must match what the backend expects (req.body.history)
+            const payload = { history: history }; 
+            let attempt = 0;
+
+            while (attempt < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    // The backend sends back plain text, not JSON.
+                    const resultText = await response.text();
+                    return resultText;
+
+                } catch (error) {
+                    console.error(`Attempt ${attempt + 1} failed:`, error);
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        return "Sorry, I couldn't get a response from the AI.";
+                    }
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(res => setTimeout(res, delay));
+                }
+            }
+        }
+        function simpleMarkdownToHtml(text) { return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/### (.*?)\n/g, '<h3>$1</h3>').replace(/## (.*?)\n/g, '<h2>$1</h2>').replace(/# (.*?)\n/g, '<h1>$1</h1>').replace(/^\* (.*?)$/gm, '<ul><li>$1</li></ul>').replace(/<\/ul>\n<ul>/g, '').replace(/\n/g, '<br>'); }
+        function appendMessage(text, role) { const d=document.createElement('div'); d.className=`chat-message ${role}`; d.innerHTML=simpleMarkdownToHtml(text); infoModalContent.appendChild(d); infoModalContent.scrollTop=infoModalContent.scrollHeight; }
+        async function startConversation(initialPrompt, title) {
+            showAiModal(title);
+            conversationContext.push({ role: "user", parts: [{ text: initialPrompt }] });
+            const responseText = await callGeminiAPI(conversationContext);
+            conversationContext.push({ role: "model", parts: [{ text: responseText }] });
+            infoModalLoader.classList.add('hidden');
+            appendMessage(responseText, 'model');
+            aiModalInputContainer.classList.remove('hidden');
+        }
+        async function handleFollowUp() {
+            const userText = followUpInput.value.trim(); if (!userText) return;
+            appendMessage(userText, 'user'); followUpInput.value = ''; infoModalLoader.classList.remove('hidden');
+            conversationContext.push({ role: "user", parts: [{ text: userText }] });
+            const responseText = await callGeminiAPI(conversationContext);
+            conversationContext.push({ role: "model", parts: [{ text: responseText }] });
+            infoModalLoader.classList.add('hidden');
+            appendMessage(responseText, 'model');
+        }
+        followUpBtn.addEventListener('click', handleFollowUp);
+        followUpInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { handleFollowUp(); } });
+        const explainBtn = document.getElementById('explain-btn');
+        const suggestBtn = document.getElementById('suggest-btn');
+        const securityBtn = document.getElementById('security-btn');
+        function getServices() {
+            const serviceNames = [];
+            document.querySelectorAll('#services .flip-card h4').forEach(h4 => serviceNames.push(h4.textContent.trim()));
+            return serviceNames;
+        }
+        explainBtn.addEventListener('click', () => {
+            let hardwareInfo = "Hardware:\n";
+            document.querySelectorAll('#hardware .card').forEach(card => {
+                const title = card.querySelector('h3').textContent.trim(); hardwareInfo += `- ${title}:\n`;
+                card.querySelectorAll('li').forEach(li => { hardwareInfo += `  - ${li.textContent.trim()}\n`; });
+            });
+            const serviceInfo = "\nSelf-Hosted Services:\n" + getServices().join(', ') + ".";
+            const prompt = `You are a helpful IT expert explaining a homelab setup to a non-technical person... \n\n${hardwareInfo}\n${serviceInfo}`;
+            startConversation(prompt, '✨ Explaining The Homelab...');
+        });
+        suggestBtn.addEventListener('click', () => {
+            const prompt = `I am a homelab enthusiast currently self-hosting...: ${getServices().join(', ')}. Please suggest 3 to 5 new projects...`;
+            startConversation(prompt, '✨ Suggesting New Projects...');
+        });
+        securityBtn.addEventListener('click', () => {
+            const prompt = `Act as a helpful cybersecurity expert... My lab runs: ${getServices().join(', ')}. Please provide a few high-level security best practices...`;
+            startConversation(prompt, '✨ Running Quick Security Check...');
+        });
+        
+        // --- Interactive Network Diagram ---
+        const diagramToggleBtn = document.getElementById('diagram-toggle-btn');
+        const interactiveDiagramView = document.getElementById('network-diagram-container');
+        const staticDiagramView = document.getElementById('static-diagram-image');
+        const diagramSubtitle = document.getElementById('diagram-subtitle');
+        const arrowRightIcon = document.getElementById('arrow-right-icon');
+        const arrowLeftIcon = document.getElementById('arrow-left-icon');
+        let isStaticDiagramVisible = false;
+
+        diagramToggleBtn.addEventListener('click', () => {
+            isStaticDiagramVisible = !isStaticDiagramVisible;
+            if (isStaticDiagramVisible) {
+                interactiveDiagramView.classList.add('opacity-0', 'pointer-events-none');
+                staticDiagramView.classList.remove('opacity-0', 'pointer-events-none');
+                diagramSubtitle.textContent = 'A static diagram of the network topology from Draw.io.';
+                arrowRightIcon.classList.add('hidden');
+                arrowLeftIcon.classList.remove('hidden');
+                diagramToggleBtn.title = "Show Interactive Diagram";
+            } else {
+                interactiveDiagramView.classList.remove('opacity-0', 'pointer-events-none');
+                staticDiagramView.classList.add('opacity-0', 'pointer-events-none');
+                diagramSubtitle.textContent = 'Click and drag to pan, use the scroll wheel to zoom, and click on any node for more info.';
+                arrowRightIcon.classList.remove('hidden');
+                arrowLeftIcon.classList.add('hidden');
+                diagramToggleBtn.title = "Show Static Diagram";
+            }
+        });
+
+        function initializeNetworkDiagram() {
+            const container = document.getElementById('network-diagram-container');
+            const icon = (svg) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+
+            const nodes = new vis.DataSet([
+                { id: 'internet', label: 'Internet', shape: 'image', image: icon('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12H18c-.7 0-1.3-.3-1.7-.8s-.6-1.1-.6-1.7V6c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2zM12 12H2.5c.7 0 1.3.3 1.7.8s.6 1.1.6 1.7V18c0 1.1-.9 2-2 2H1c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2z"/></svg>'), description: '<h3>The Internet</h3><p>The source of all external traffic to the homelab. Everything starts here.</p>' },
+                { id: 'firewall', label: 'OPNsense\nFirewall', shape: 'box', color: '#c0392b', font: { color: '#fff'}, description: '<h3>OPNsense Firewall</h3><p>Running on a Datto Alto 3, this is the primary security gateway. It inspects all incoming and outgoing traffic, manages network rules, and runs the CrowdSec Intrusion Prevention System.</p>' },
+                { id: 'router', label: 'Nighthawk\nMesh WiFi', shape: 'image', image: icon('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l3 3m-3-3l-3 3M19 12v3a2 2 0 01-2 2H7a2 2 0 01-2-2v-3"/><path d="M12 19v-3"/></svg>'), description: '<h3>Nighthawk Mesh WiFi 6</h3><p>The primary access point (MR60) and satellite (MS60) provide high-speed wireless coverage for all devices on the network.</p>' },
+                { id: 'gaming-rig', label: 'Gaming & AI Rig', shape: 'image', image: icon('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>'), description: '<h3>Gaming & AI Rig</h3><p>My primary workstation for gaming, development, and running local AI models. It also serves as the Active Directory Controller for the Windows machines on the network.</p>' },
+                { id: 'primary-server', label: 'Primary Server', shape: 'image', image: icon('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>'), description: '<h3>Primary Server (HP ProDesk)</h3><p>A small form factor PC running Ubuntu LTS. This is the main workhorse, hosting the majority of the self-hosted Docker services.</p>' },
+                { id: 'headless-node', label: 'Headless Node', shape: 'image', image: icon('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16V7a2 2 0 00-2-2H6a2 2 0 00-2 2v9m16 0H4m16 0l-2 5H6l-2-5"/></svg>'), description: '<h3>Headless Node (Acer Laptop)</h3><p>A converted headless laptop with custom cooling running Ubuntu LTS. It serves as a secondary node for hosting services, providing redundancy and load distribution.</p>' },
+                { id: 'services', label: 'Self-Hosted\nServices', shape: 'database', color: '#16a085', font: {color: '#fff'}, description: '<h3>Self-Hosted Services</h3><p>This represents the suite of applications (like Jellyfin, Home Assistant, etc.) running in Docker containers across the Primary Server and Headless Node.</p>' },
+            ]);
+
+            const edges = new vis.DataSet([
+                { from: 'internet', to: 'firewall', arrows: 'to' },
+                { from: 'firewall', to: 'router', arrows: 'to' },
+                { from: 'router', to: 'gaming-rig', arrows: 'to, from' },
+                { from: 'router', to: 'primary-server', arrows: 'to, from' },
+                { from: 'router', to: 'headless-node', arrows: 'to, from' },
+                { from: 'primary-server', to: 'services', arrows: 'to' },
+                { from: 'headless-node', to: 'services', arrows: 'to' },
+            ]);
+
+            const data = { nodes: nodes, edges: edges };
+            const options = {
+                nodes: { borderWidth: 2, font: { color: '#d1d5db', size: 14 }, shapeProperties: { interpolation: false } },
+                edges: { color: { color: '#374151', highlight: '#4f46e5' }, width: 2 },
+                physics: { stabilization: false, barnesHut: { gravitationalConstant: -80000, springConstant: 0.001, springLength: 200 } },
+                interaction: { tooltipDelay: 200, hideEdgesOnDrag: true },
+            };
+            
+            const network = new vis.Network(container, data, options);
+
+            network.on("click", function (params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = nodes.get(nodeId);
+                    showInfoModal(node.label.replace('\n', ' '), node.description);
+                }
+            });
+        }
+        initializeNetworkDiagram();
+
+    });
+</script>
+
+</body>
+</html>
+
