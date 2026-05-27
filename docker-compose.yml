@@ -1,0 +1,10 @@
+services:
+  homelab-showcase:
+    build: .
+    container_name: homelab-showcase
+    restart: unless-stopped
+    ports:
+      - "9434:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
