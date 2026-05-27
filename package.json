@@ -2,11 +2,16 @@
   "name": "frontend",
   "version": "1.0.0",
   "description": "html",
-  "main": "index.js",
+  "main": "server.js",
+  "type": "module",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
+    "start": "node server.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +23,13 @@
   "bugs": {
     "url": "https://github.com/caeljk/homelab-showcase/issues"
   },
-  "homepage": "https://github.com/caeljk/homelab-showcase#readme"
+  "homepage": "https://github.com/caeljk/homelab-showcase#readme",
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "tailwindcss": "^4.3.0",
+    "vite": "^8.0.14"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
 }
