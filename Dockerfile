@@ -24,11 +24,11 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server.js ./server.js
 
-# Expose the internal port (Express default 3000)
-EXPOSE 3000
+# Expose the internal port (Express default 3001)
+EXPOSE 3001
 
 # Set environment variable for port
-ENV PORT=3000
+ENV PORT=3001
 
 # Start the server
 CMD ["npm", "start"]
