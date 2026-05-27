@@ -36,7 +36,7 @@ app.post('/api/ask-gemini', async (req, res) => {
 });
 
 // Fallback to index.html for SPA-like behavior (optional)
-app.get('*', (req, res) => {
+app.get('(.*)', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
