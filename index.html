@@ -1,290 +1,902 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="dark scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Homelab Showcase</title>
-    
-    <!-- Google Fonts: Inter -->
+    <title>Engineering Showcase // Systems &amp; Infrastructure</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Vis.js for Network Diagram -->
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    
-    <!-- Styles -->
-    <link rel="stylesheet" href="./src/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-card: #181818;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.18);
+            --fg: #f0eee9;
+            --dim: #8c8c8c;
+            --a1: #d77757;
+            --a2: #eb9f7f;
+            --ok: #4eba65;
+            --warn: #ffc107;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        .hub-card {
+            background: #141414;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hub-card:hover {
+            border-color: var(--border-hover);
+        }
+        .hub-stat-card {
+            background: #121212;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem 1.25rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .hub-stat-card:hover {
+            border-color: rgba(215, 119, 87, 0.4);
+            transform: translateY(-2px);
+            background: #161616;
+        }
+        .badge-live {
+            background: rgba(215, 119, 87, 0.12);
+            color: var(--a1);
+            border: 1px solid rgba(215, 119, 87, 0.35);
+            font-size: 0.65rem;
+            letter-spacing: 0.12em;
+            padding: 0.2rem 0.55rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        .nav-link {
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.8125rem;
+            color: var(--dim);
+            transition: all 0.15s ease;
+        }
+        .nav-link:hover {
+            color: var(--fg);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .filter-btn {
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            background: #121212;
+            transition: all 0.15s ease;
+        }
+        .filter-btn:hover {
+            color: var(--fg);
+            border-color: var(--border-hover);
+        }
+        .filter-btn.active {
+            background: rgba(215, 119, 87, 0.15);
+            border-color: rgba(215, 119, 87, 0.4);
+            color: var(--a1);
+        }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-backdrop.hidden {
+            display: none;
+        }
+    </style>
 </head>
-<body class="antialiased">
-    
-    <!-- Contact Button -->
-    <button id="contact-btn" title="Contact Me">
-        <span class="text-2xl">📬</span>
-    </button>
+<body class="antialiased selection:bg-[#d77757]/30 selection:text-[#f0eee9]">
+    <!-- Top System Telemetry Banner -->
+    <div class="flex items-center justify-between border-b border-white/10 bg-black/60 px-4 sm:px-6 py-2 text-xs backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-mono text-[10px] font-medium">
+                <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span> INFRASTRUCTURE ACTIVE
+            </span>
+            <span class="text-xs text-[#8c8c8c] hidden sm:inline">PROXMOX VE 9 CLUSTER &bull; 4 COMPUTE PLATFORMS &bull; 40+ ISOLATED CONTAINERS</span>
+        </div>
+        <div class="flex items-center gap-4 text-xs font-mono text-[#8c8c8c]">
+            <span class="hidden md:inline">PERIMETER: <span class="text-white">CROWDSEC + CLOUDFLARE WAF</span></span>
+            <a href="https://caeljknet.com/" class="hover:text-white transition-colors flex items-center gap-1">
+                &larr; CAELJKNET.COM
+            </a>
+        </div>
+    </div>
 
-    <!-- Main page content container -->
-    <div id="main-content">
-        <!-- Dynamic Background Canvas -->
-        <canvas id="pcb-background"></canvas>
-
-        <!-- Header -->
-        <header class="py-6 px-4 sm:px-6 lg:px-8">
-            <div class="max-w-5xl mx-auto text-center">
-                <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
-                    Welcome to <span class="gradient-text" id="dynamic-title-text"></span><span class="gradient-text" id="cursor">|</span>
-                </h1>
-                <p class="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">
-                    A personal playground for exploring technology, self-hosting services, and tinkering with enterprise-grade hardware.
-                </p>
+    <!-- Cluster Hub Style Header -->
+    <header class="flex items-center justify-between border-b border-white/10 bg-black/40 px-4 sm:px-6 py-3.5 backdrop-blur-md sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-black shadow-[0_0_20px_-4px_rgba(215,119,87,0.5)]">
+                <svg viewBox="0 0 24 24" class="h-5 w-5 text-[#d77757]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                    <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"></path>
+                </svg>
             </div>
-        </header>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-base sm:text-lg font-light tracking-tight text-white">Engineering Showcase</span>
+                    <span class="text-neutral-500 text-sm hidden sm:inline">/</span>
+                    <span class="text-xs text-[#8c8c8c] font-mono hidden sm:inline">Architecture &amp; Compute Stack</span>
+                </div>
+            </div>
+            <nav class="ml-6 hidden lg:flex items-center gap-1">
+                <a href="#overview" class="nav-link">Overview</a>
+                <a href="#nodes" class="nav-link">Hypervisors &amp; Baremetal</a>
+                <a href="#topology" class="nav-link">Topology</a>
+                <a href="#storage" class="nav-link">NFS Storage</a>
+                <a href="#fleet" class="nav-link">Microservices (40+)</a>
+            </nav>
+        </div>
 
-        <main class="py-12 px-4 sm:px-6 lg:px-8">
-            <div class="max-w-5xl mx-auto space-y-20">
-                <!-- Hardware Section -->
-                <section id="hardware">
-                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-indigo-500 pl-4">Hardware Rack</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        
-                        <div class="card p-6 rounded-lg md:col-span-2">
-                            <div class="flex items-center mb-4">
-                                <div class="icon-placeholder flex items-center justify-center">
-                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
-                                </div>
-                                <h3 class="ml-4 text-xl font-semibold text-white">Gaming & AI Rig</h3>
-                            </div>
-                            <p class="text-gray-400">Primary Workstation</p>
-                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
-                                <li><span class="font-medium text-gray-200">CPU:</span> Ryzen 5 5600X3D</li>
-                                <li><span class="font-medium text-gray-200">GPU:</span> GeForce RTX 4060 OC</li>
-                                <li><span class="font-medium text-gray-200">RAM:</span> 32GB DDR4</li>
-                                <li><span class="font-medium text-gray-200">Storage:</span> 1TB M.2 NVMe, 2x 1TB SSDs</li>
-                                <li><span class="font-medium text-gray-200">OS:</span> Dual-boot Windows 11 & Linux</li>
-                                <li><span class="font-medium text-gray-200">Role:</span> Active Directory Controller</li>
-                            </ul>
+        <div class="flex items-center gap-3">
+            <div class="relative hidden sm:block">
+                <input id="service-search" type="text" placeholder="Filter containers..." class="px-3 py-1.5 rounded-lg border border-white/10 bg-black/60 text-xs font-mono text-white placeholder-neutral-500 focus:border-[#d77757] outline-none w-48">
+            </div>
+            <button id="contact-btn" class="px-3.5 py-1.5 rounded-lg border border-[#d77757]/40 bg-[#d77757]/10 text-xs font-medium text-[#d77757] hover:bg-[#d77757]/20 transition-all flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                <span>Transmit Message</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+        <!-- Section 1: Overview & Top Telemetry -->
+        <section id="overview" class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <div class="badge-live inline-block mb-2 font-mono">DISTRIBUTED ARCHITECTURE</div>
+                    <h2 class="text-2xl sm:text-4xl font-light tracking-tight text-white">Engineering Overview at a glance.</h2>
+                    <p class="text-sm text-[#8c8c8c] mt-1 max-w-3xl">A hardened multi-tier architecture spanning Dual Proxmox VE hypervisors, dedicated baremetal orchestration platforms, restricted NFS storage buses, and isolated container sandboxes.</p>
+                </div>
+                <div class="flex items-center gap-2 self-start sm:self-auto font-mono text-xs">
+                    <span class="px-2.5 py-1 rounded bg-black/60 border border-white/10 text-[#8c8c8c]">UPTIME: 99.98%</span>
+                    <span class="px-2.5 py-1 rounded bg-[#d77757]/10 border border-[#d77757]/30 text-[#d77757]">4 COMPUTE PLATFORMS</span>
+                </div>
+            </div>
+
+            <!-- Top Metric Tiles -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div class="hub-stat-card">
+                    <div class="text-[10px] uppercase font-mono tracking-wider text-[#8c8c8c]">PROXMOX CLUSTER</div>
+                    <div class="text-2xl font-light text-white mt-1">PVE 9.2</div>
+                    <div class="text-[11px] text-[#4eba65] mt-1 font-mono">Primary &bull; Secondary</div>
+                </div>
+                <div class="hub-stat-card">
+                    <div class="text-[10px] uppercase font-mono tracking-wider text-[#8c8c8c]">BAREMETAL NODES</div>
+                    <div class="text-2xl font-light text-white mt-1">2 Nodes</div>
+                    <div class="text-[11px] text-[#8c8c8c] mt-1 font-mono">Edge &bull; Dev Orchestrator</div>
+                </div>
+                <div class="hub-stat-card">
+                    <div class="text-[10px] uppercase font-mono tracking-wider text-[#8c8c8c]">STORAGE BUS</div>
+                    <div class="text-2xl font-light text-white mt-1">9.0 TB</div>
+                    <div class="text-[11px] text-[#d77757] mt-1 font-mono">Restricted NFS v3</div>
+                </div>
+                <div class="hub-stat-card">
+                    <div class="text-[10px] uppercase font-mono tracking-wider text-[#8c8c8c]">CONTAINERS &amp; VMS</div>
+                    <div class="text-2xl font-light text-white mt-1">40+</div>
+                    <div class="text-[11px] text-[#8c8c8c] mt-1 font-mono">LXC Sandboxes &bull; OCI</div>
+                </div>
+                <div class="hub-stat-card">
+                    <div class="text-[10px] uppercase font-mono tracking-wider text-[#8c8c8c]">SECURITY GATEWAY</div>
+                    <div class="text-2xl font-light text-white mt-1">CrowdSec</div>
+                    <div class="text-[11px] text-[#4eba65] mt-1 font-mono">BPF Kernel IPS</div>
+                </div>
+                <div class="hub-stat-card">
+                    <div class="text-[10px] uppercase font-mono tracking-wider text-[#8c8c8c]">DNS TOPOLOGY</div>
+                    <div class="text-2xl font-light text-white mt-1">3x Pi-hole</div>
+                    <div class="text-[11px] text-[#4eba65] mt-1 font-mono">Dual-Node Unbound</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Accurate 4 Compute Platforms -->
+        <section id="nodes" class="space-y-6">
+                        <div>
+                <h3 class="text-xl font-light tracking-tight text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-[#d77757]"></span>
+                    Hypervisors, Proxmox LXCs &amp; Baremetal Compute (14 Hosts)
+                </h3>
+                <p class="text-xs text-[#8c8c8c] mt-1">Real-time resource allocations and container density verified via cluster Dozzle orchestration (100+ active containers across PVE 1, PVE 2, node-23, and node-33).</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <!-- Proxmox Node 1 (i5-10500T) -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">HYPERVISOR 1 // PVE 9.2.2</div>
+                            <h4 class="text-sm font-medium text-white">proxmox (Node 1)</h4>
                         </div>
-                        <div class="card p-6 rounded-lg">
-                            <div class="flex items-center mb-4">
-                                <div class="icon-placeholder flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
-                                </div>
-                                <h3 class="ml-4 text-xl font-semibold text-white">Primary Server</h3>
-                            </div>
-                            <p class="text-gray-400">HP ProDesk 400 G3 SFF</p>
-                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
-                                <li><span class="font-medium text-gray-200">CPU:</span> i3 6320 @ 3.9GHz</li>
-                                <li><span class="font-medium text-gray-200">RAM:</span> 8GB</li>
-                                <li><span class="font-medium text-gray-200">Storage:</span> 1TB</li>
-                                <li><span class="font-medium text-gray-200">OS:</span> Ubuntu LTS 22.04</li>
-                            </ul>
-                        </div>
-                        <div class="card p-6 rounded-lg">
-                             <div class="flex items-center mb-4">
-                                <div class="icon-placeholder flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                                </div>
-                                <h3 class="ml-4 text-xl font-semibold text-white">Headless Node</h3>
-                            </div>
-                            <p class="text-gray-400">Acer Laptop (Custom Build)</p>
-                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
-                                <li><span class="font-medium text-gray-200">CPU:</span> AMD A8 APU</li>
-                                <li><span class="font-medium text-gray-200">RAM:</span> 16GB</li>
-                                <li><span class="font-medium text-gray-200">Storage:</span> 2TB</li>
-                                <li><span class="font-medium text-gray-200">OS:</span> Ubuntu LTS 22.04</li>
-                                <li><span class="font-medium text-gray-200">Info:</span> Headless, custom cooling, no battery</li>
-                            </ul>
-                        </div>
-                        <div class="card p-6 rounded-lg md:col-span-2">
-                            <div class="flex items-center mb-4">
-                                <div class="icon-placeholder flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-                                </div>
-                                <h3 class="ml-4 text-xl font-semibold text-white">Networking Gear</h3>
-                            </div>
-                            <p class="text-gray-400">Custom Stack</p>
-                            <ul class="mt-4 space-y-2 text-sm text-gray-300">
-                                <li><span class="font-medium text-gray-200">Firewall:</span> Datto Alto 3 (OPNsense)</li>
-                                <li><span class="font-medium text-gray-200">Security:</span> CrowdSec Bouncer</li>
-                                <li><span class="font-medium text-gray-200">AP:</span> Nighthawk Mesh WiFi 6 (MR60 & MS60)</li>
-                            </ul>
-                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">PRIMARY PVE</span>
                     </div>
-                </section>
+                    <div class="space-y-1.5 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Compute:</span> <span class="text-white">Intel i5-10500T (12 Threads)</span></div>
+                        <div class="flex justify-between"><span>Memory:</span> <span class="text-white">15 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Storage:</span> <span class="text-white">Dual NVMe SSDs</span></div>
+                        <div class="flex justify-between"><span>iGPU:</span> <span class="text-white">Intel UHD 630</span></div>
+                    </div>
+                    <p class="text-[10px] text-neutral-400 pt-1 border-t border-white/5 leading-relaxed">
+                        Hosts core high-throughput CTs: Immich (CT 110), AudioMuse-AI (CT 117), Ops-Monitor (CT 119), Jellyfin (CT 102), and Claude Worker.
+                    </p>
+                </div>
+
+                <!-- Proxmox Node 2 -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">HYPERVISOR 2 // PVE 9.2.2</div>
+                            <h4 class="text-sm font-medium text-white">proxmox-two</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CLUSTER PVE</span>
+                    </div>
+                    <div class="space-y-1.5 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Compute:</span> <span class="text-white">4 Cores x86_64</span></div>
+                        <div class="flex justify-between"><span>Memory:</span> <span class="text-white">7.7 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Storage:</span> <span class="text-white">500 GB Storage</span></div>
+                        <div class="flex justify-between"><span>Network:</span> <span class="text-white">Lab Subnet VLAN</span></div>
+                    </div>
+                    <p class="text-[10px] text-neutral-400 pt-1 border-t border-white/5 leading-relaxed">
+                        Hosts service sandboxes: Vaultwarden (CT 112), Forgejo (CT 113), Firefly III (CT 114), Media Stack (CT 115), Paperless-ngx, and Edge DMZ.
+                    </p>
+                </div>
+
+                <!-- Node 23 (Baremetal) -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-cyan-400">BAREMETAL HOST 1</div>
+                            <h4 class="text-sm font-medium text-white">node-23</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">18 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1.5 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Compute:</span> <span class="text-white">4 Cores Baremetal</span></div>
+                        <div class="flex justify-between"><span>Memory:</span> <span class="text-white">14.6 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Network:</span> <span class="text-white">Gigabit Interface (enp1s0)</span></div>
+                        <div class="flex justify-between"><span>Dozzle Agent:</span> <span class="text-white">v8.14.7 Active</span></div>
+                    </div>
+                    <p class="text-[10px] text-neutral-400 pt-1 border-t border-white/5 leading-relaxed">
+                        Edge routing, Caeljknet.com web frontends, DC01 active directory VM, arr acquisition suite, and WireGuard VPN tunnel.
+                    </p>
+                </div>
+
+                <!-- Node 33 (Baremetal SFF) -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-amber-400">BAREMETAL HOST 2</div>
+                            <h4 class="text-sm font-medium text-white">node-33 (prodesk)</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20">38 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1.5 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Compute:</span> <span class="text-white">4 Cores Baremetal</span></div>
+                        <div class="flex justify-between"><span>Memory:</span> <span class="text-white">7.6 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Storage:</span> <span class="text-white">1TB CMR + 8TB SMR</span></div>
+                        <div class="flex justify-between"><span>Dozzle Agent:</span> <span class="text-white">v11.4.0 Active</span></div>
+                    </div>
+                    <p class="text-[10px] text-neutral-400 pt-1 border-t border-white/5 leading-relaxed">
+                        Nexus developer suite, FastMCP Todo server, Heimdall dashboard, Rustic backup repositories, and primary Unbound root DNS.
+                    </p>
+                </div>
+
+                <!-- CT 110: Docker Apps -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#eb9f7f]">LXC CONTAINER // PVE 1</div>
+                            <h4 class="text-sm font-medium text-white">ct110-docker-apps</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#eb9f7f]/10 text-[#eb9f7f] border border-[#eb9f7f]/20">6 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">4 Cores &bull; 4 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Immich v3.3.5, pgvector, cAdvisor</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 121: Chelsea -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#eb9f7f]">LXC CONTAINER // PVE 1</div>
+                            <h4 class="text-sm font-medium text-white">ct121-chelsea</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#eb9f7f]/10 text-[#eb9f7f] border border-[#eb9f7f]/20">5 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 4 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Sparky Fitness Server, Hub, Postgres 18</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 117: AudioMuse -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#eb9f7f]">LXC CONTAINER // PVE 1</div>
+                            <h4 class="text-sm font-medium text-white">ct117-audiomuse</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#eb9f7f]/10 text-[#eb9f7f] border border-[#eb9f7f]/20">5 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">8 Cores &bull; 6 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">AudioMuse AI Flask &amp; Parallel Workers</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 119: Ops Monitor -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-purple-400">LXC CONTAINER // PVE 1</div>
+                            <h4 class="text-sm font-medium text-white">ct119-ops-monitor</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/20">3 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 2 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Uptime Kuma, Scrutiny Omnibus</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 120: Forgejo Runner -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-purple-400">LXC CONTAINER // PVE 1</div>
+                            <h4 class="text-sm font-medium text-white">ct120-forgejo-runner</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/20">3 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">3 Cores &bull; 3 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Forgejo Actions Runner &amp; Docker DinD</span></div>
+                    </div>
+                </div>
+
+                <!-- Claude Worker VM -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#eb9f7f]">VM 150 // PVE 1</div>
+                            <h4 class="text-sm font-medium text-white">claude-worker</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#eb9f7f]/10 text-[#eb9f7f] border border-[#eb9f7f]/20">1 CONTAINER</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 1.6 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Central Dozzle Hub v11.4.1 &amp; Wiki</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 115: Media Stack -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">LXC CONTAINER // PVE 2</div>
+                            <h4 class="text-sm font-medium text-white">ct115-media</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#d77757]/10 text-[#d77757] border border-[#d77757]/20">5 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 2 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Navidrome, Audiobookshelf, Kavita</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 116: Paperless -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">LXC CONTAINER // PVE 2</div>
+                            <h4 class="text-sm font-medium text-white">paperless</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#d77757]/10 text-[#d77757] border border-[#d77757]/20">6 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 2 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Paperless-ngx, Trilium, Tika, Gotenberg</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 114: Firefly III -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">LXC CONTAINER // PVE 2</div>
+                            <h4 class="text-sm font-medium text-white">ct114-firefly</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#d77757]/10 text-[#d77757] border border-[#d77757]/20">6 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 2 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Firefly III Core, Importer, MariaDB</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 118: Edge -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">LXC CONTAINER // PVE 2</div>
+                            <h4 class="text-sm font-medium text-white">ct118-edge</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#d77757]/10 text-[#d77757] border border-[#d77757]/20">4 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 1.5 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">NPM, CrowdSec BPF Engine &amp; Web UI</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 113: Forgejo Git -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">LXC CONTAINER // PVE 2</div>
+                            <h4 class="text-sm font-medium text-white">ct113-forgejo</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#d77757]/10 text-[#d77757] border border-[#d77757]/20">2 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">2 Cores &bull; 1 GB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Forgejo Git Service &amp; Dozzle Agent</span></div>
+                    </div>
+                </div>
+
+                <!-- CT 112: Vaultwarden -->
+                <div class="hub-card p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div>
+                            <div class="text-[10px] font-mono text-[#d77757]">LXC CONTAINER // PVE 2</div>
+                            <h4 class="text-sm font-medium text-white">ct112-vaultwarden</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-[#d77757]/10 text-[#d77757] border border-[#d77757]/20">2 CONTAINERS</span>
+                    </div>
+                    <div class="space-y-1 text-[11px] font-mono text-[#8c8c8c]">
+                        <div class="flex justify-between"><span>Resources:</span> <span class="text-white">1 Core &bull; 512 MB RAM</span></div>
+                        <div class="flex justify-between"><span>Stack:</span> <span class="text-white">Vaultwarden Rust Core &amp; Dozzle Agent</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Topology Diagram -->
+        <section id="topology" class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h3 class="text-xl font-light tracking-tight text-white flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        Interactive Cluster Architecture &amp; Storage Bus
+                    </h3>
+                    <p class="text-xs text-[#8c8c8c] mt-1">Visual topology showing hypervisor isolation boundaries, perimeter filtering, and restricted storage paths.</p>
+                </div>
+                <div class="text-xs font-mono text-[#8c8c8c] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>DRAG / SCROLL TO EXPLORE MESH</span>
+                </div>
+            </div>
+
+            <div class="hub-card p-4 relative overflow-hidden">
+                <div id="interactive-diagram" class="w-full h-[450px] sm:h-[520px] rounded-lg bg-black/60 border border-white/5"></div>
+            </div>
+        </section>
+
+        <!-- Section 4: Restricted Storage Matrix (from Wiki) -->
+        <section id="storage" class="space-y-6">
+            <div>
+                <h3 class="text-xl font-light tracking-tight text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    Restricted Storage Architecture &amp; NFS Buses
+                </h3>
+                <p class="text-xs text-[#8c8c8c] mt-1">Multi-tier storage topology on node-33 with strict access controls separating high-performance flash from archival storage.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="hub-card p-5 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <span class="text-sm font-medium text-white">Fast Tier: 1 TB CMR Landing</span>
+                        <span class="text-[10px] font-mono text-[#d77757]">HIGH IOPS</span>
+                    </div>
+                    <p class="text-xs text-[#8c8c8c]">
+                        High-speed CMR storage layer serving as the primary Proxmox vzdump landing zone and hosting high-throughput append-only Rustic REST repositories.
+                    </p>
+                    <div class="font-mono text-[11px] text-neutral-400 space-y-1">
+                        <div>&bull; Subnet-wide access for rapid disaster recovery dumps</div>
+                        <div>&bull; Immune to SMR write-cliff degradation during parallel backups</div>
+                    </div>
+                </div>
+
+                <div class="hub-card p-5 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <span class="text-sm font-medium text-white">Cold Tier: 8 TB Archival Pool</span>
+                        <span class="text-[10px] font-mono text-cyan-400">RESTRICTED NFS</span>
+                    </div>
+                    <p class="text-xs text-[#8c8c8c]">
+                        High-capacity archival storage strictly isolated to authorized clients. Powers media libraries and immutable snapshot archives.
+                    </p>
+                    <div class="font-mono text-[11px] text-neutral-400 space-y-1">
+                        <div>&bull; Media export restricted read-only with UID squashing</div>
+                        <div>&bull; Immich photo data isolated over dedicated NFS v3 links</div>
+                    </div>
+                </div>
+
+                <div class="hub-card p-5 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                        <span class="text-sm font-medium text-white">Proxmox NVMe Flash Storage</span>
+                        <span class="text-[10px] font-mono text-amber-400">DATABASE TIER</span>
+                    </div>
+                    <p class="text-xs text-[#8c8c8c]">
+                        Local solid-state NVMe storage on proxmox nodes backing database containers, Redis caches, and Qdrant vector memory.
+                    </p>
+                    <div class="font-mono text-[11px] text-neutral-400 space-y-1">
+                        <div>&bull; Sub-millisecond random access for relational queries</div>
+                        <div>&bull; Local ZFS datasets for high-density container disks</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: The 40+ Container Fleet (All CTs and Docker Apps) -->
+        <section id="fleet" class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-xl font-light tracking-tight text-white flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        Active Microservices &amp; Container Fleet
+                    </h3>
+                    <p class="text-xs text-[#8c8c8c] mt-1">Complete inventory of containerized services and LXCs running across all cluster nodes.</p>
+                </div>
                 
-                <section id="ai-features">
-                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-green-500 pl-4">Homelab Insights</h2>
-                    <div class="card rounded-lg p-6 text-center">
-                        <p class="text-gray-400 mb-6">Use the power of AI to learn more about this setup or get ideas for your own projects.</p>
-                        <div class="flex flex-col sm:flex-row justify-center gap-4 flex-wrap">
-                            <button id="explain-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                ✨ Explain My Setup
-                            </button>
-                            <button id="suggest-btn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
-                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6-2.93 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" /><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" /></svg>
-                                ✨ Suggest New Projects
-                            </button>
-                            <button id="security-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
-                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5.023L2 5.054a12.006 12.006 0 00-1 7.054c0 1.66.168 3.317.502 4.905L2 17l1.5-1.5a11.956 11.956 0 01-1.44-3.114A11.91 11.91 0 0110 18a12.006 12.006 0 007.44-2.553L18 17l-1.5-1.5a11.956 11.956 0 011.44-3.114A11.91 11.91 0 0110 2a11.954 11.954 0 01-7.834 3.023L2 5.054z" clip-rule="evenodd" /></svg>
-                                ✨ Run Quick Security Check
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                <section id="services">
-                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-pink-500 pl-4">Self-Hosted Services</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                        <!-- Service Flip Cards -->
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/authentik.svg" alt="Authentik Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Authentik</h4><p class="text-sm text-gray-400">Identity Provider</p></div><div class="flip-card-back"><p class="text-sm">Central identity provider for all my services, handling SSO and security policies.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.worldvectorlogo.com/logos/memcached.svg" alt="Memcached Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Memcached</h4><p class="text-sm text-gray-400">In-Memory Cache</p></div><div class="flip-card-back"><p class="text-sm">Used to speed up specific applications that require fast caching.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/redis.svg" alt="Redis Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Redis</h4><p class="text-sm text-gray-400">In-Memory Cache</p></div><div class="flip-card-back"><p class="text-sm">High-performance cache and message broker for various services.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://www.svgrepo.com/show/323619/watchtower.svg" alt="Watchtower Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Watchtower</h4><p class="text-sm text-gray-400">Container Updates</p></div><div class="flip-card-back"><p class="text-sm">Automatically keeps all my Docker containers up-to-date with the latest versions.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/paperless-ngx.svg" alt="Paperless-ngx Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Paperless-ngx</h4><p class="text-sm text-gray-400">Document Management</p></div><div class="flip-card-back"><p class="text-sm">My digital filing cabinet. Scans, indexes, and archives all my physical documents.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://www.svgrepo.com/show/354522/visual-studio-code.svg" alt="VSCode Server Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">VSCode Server</h4><p class="text-sm text-gray-400">Remote IDE</p></div><div class="flip-card-back"><p class="text-sm">Allows me to code on any machine through a web browser with my full VSCode setup.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/freshrss.svg" alt="FreshRSS Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">FreshRSS</h4><p class="text-sm text-gray-400">RSS Aggregator</p></div><div class="flip-card-back"><p class="text-sm">Keeps me updated with my favorite blogs and news sites without ads or algorithms.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/adguard-home.svg" alt="AdGuard Home Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">AdGuard Home</h4><p class="text-sm text-gray-400">Ad Blocking</p></div><div class="flip-card-back"><p class="text-sm">Network-wide ad and tracker blocking for all devices on my network.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg" alt="Jellyfin Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Jellyfin</h4><p class="text-sm text-gray-400">Media Server</p></div><div class="flip-card-back"><p class="text-sm">Organizes and streams my personal movie and TV show collection to any device.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/navidrome.svg" alt="Navidrome Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Navidrome</h4><p class="text-sm text-gray-400">Music Server</p></div><div class="flip-card-back"><p class="text-sm">My personal music streaming service, like Spotify but with my own library.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/home-assistant-alt.svg" alt="Home Assistant Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Home Assistant</h4><p class="text-sm text-gray-400">Home Automation</p></div><div class="flip-card-back"><p class="text-sm">The brain of my smart home. Automates lighting, sensors, and more.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/pi-hole-unbound.png" alt="Pi-hole Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Pi-hole (x2)</h4><p class="text-sm text-gray-400">DNS Sinkhole (HA)</p></div><div class="flip-card-back"><p class="text-sm">Primary and secondary DNS servers for ad-blocking and local DNS resolution.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/traefik.svg" alt="Traefik Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Traefik</h4><p class="text-sm text-gray-400">Reverse Proxy</p></div><div class="flip-card-back"><p class="text-sm">Manages incoming traffic and automatically handles SSL for my services.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg" alt="Audiobookshelf Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Audiobookshelf</h4><p class="text-sm text-gray-400">Audiobook Server</p></div><div class="flip-card-back"><p class="text-sm">Streams my audiobook and podcast collection, keeping track of my progress.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/glances-light.svg" alt="Glances Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Glances</h4><p class="text-sm text-gray-400">System Monitoring</p></div><div class="flip-card-back"><p class="text-sm">A quick, at-a-glance view of system resources across all my servers.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/prometheus.svg" alt="Prometheus Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Prometheus</h4><p class="text-sm text-gray-400">Metrics</p></div><div class="flip-card-back"><p class="text-sm">Collects detailed time-series metrics from all my applications and infrastructure.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/grafana.svg" alt="Grafana Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Grafana</h4><p class="text-sm text-gray-400">Dashboards</p></div><div class="flip-card-back"><p class="text-sm">Visualizes the data collected by Prometheus in beautiful, informative dashboards.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/forgejo.svg" alt="Forgejo Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Forgejo</h4><p class="text-sm text-gray-400">Git Server</p></div><div class="flip-card-back"><p class="text-sm">My private Git server for version control on all my personal coding projects.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/dozzle.svg" alt="Dozzle Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Dozzle</h4><p class="text-sm text-gray-400">Log Viewer</p></div><div class="flip-card-back"><p class="text-sm">A simple, real-time log viewer for all of my running Docker containers.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/portainer.svg" alt="Portainer Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Portainer</h4><p class="text-sm text-gray-400">Container Mgmt</p></div><div class="flip-card-back"><p class="text-sm">Easy-to-use UI for managing my Docker containers, volumes, and networks.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/trilium.svg" alt="Trilium Notes Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Trilium Notes</h4><p class="text-sm text-gray-400">Note Taking</p></div><div class="flip-card-back"><p class="text-sm">My personal knowledge base for hierarchical note-taking and organization.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/radicale.svg" alt="CalDAV Server Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">CalDAV Server</h4><p class="text-sm text-gray-400">Calendar Sync</p></div><div class="flip-card-back"><p class="text-sm">Self-hosted calendar server that syncs across all my devices.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/webdav.png" alt="WebDAV Server Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">WebDAV Server</h4><p class="text-sm text-gray-400">File Sync</p></div><div class="flip-card-back"><p class="text-sm">For simple, self-hosted file access and synchronization.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/homepage.png" alt="Intranet Sites Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Intranet Sites</h4><p class="text-sm text-gray-400">Internal Web</p></div><div class="flip-card-back"><p class="text-sm">Various internal-only websites and tools for my home network.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/unbound.svg" alt="Unbound Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">Unbound</h4><p class="text-sm text-gray-400">DNS Resolver</p></div><div class="flip-card-back"><p class="text-sm">A caching and recursive DNS resolver for improved privacy and performance.</p></div></div></div>
-                        <div class="flip-card"><div class="flip-card-inner"><div class="card flip-card-front p-4 rounded-lg text-center flex flex-col justify-center"><img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/haproxy.svg" alt="HAProxy Logo" class="mx-auto h-16 w-16 rounded-full mb-3"><h4 class="font-bold text-white">HAProxy</h4><p class="text-sm text-gray-400">Load Balancer</p></div><div class="flip-card-back"><p class="text-sm">Provides high availability and load balancing for critical services like Pi-hole.</p></div></div></div>
-                    </div>
-                </section>
-
-                <section id="network-diagram-section">
-                    <h2 class="text-3xl font-bold text-white mb-8 border-l-4 border-teal-500 pl-4">Network Diagram</h2>
-                     <div class="card rounded-lg p-4">
-                        <p id="diagram-subtitle" class="text-center text-gray-400 mb-4">Click and drag to pan, use the scroll wheel to zoom, and click on any node for more info.</p>
-                        <div class="relative">
-                             <div id="diagram-views-container" class="relative w-full h-[600px] rounded-lg overflow-hidden">
-                                <!-- Interactive View -->
-                                <div id="network-diagram-container" class="absolute inset-0 transition-opacity duration-500 opacity-100"></div>
-                                <!-- Static Image View -->
-                                <img id="static-diagram-image" 
-                                     src="./docs/screenshots/networkdiagram.svg"
-                                     alt="Static Network Diagram"
-                                     class="absolute inset-0 w-full h-full object-contain transition-opacity duration-500 opacity-0 pointer-events-none"
-                                     onerror="this.onerror=null;this.src='';"
-                                >
-                            </div>
-                            <!-- Toggle Button -->
-                            <button id="diagram-toggle-btn" title="Show Static Diagram" class="absolute top-1/2 -right-6 z-20 transform -translate-y-1/2 bg-gray-700 hover:bg-indigo-600 text-white font-bold w-12 h-12 rounded-full flex items-center justify-center transition-transform hover:scale-110">
-                                <svg id="arrow-right-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                                <svg id="arrow-left-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-            </div>
-        </main>
-
-        <footer class="mt-20 py-10 border-t border-gray-800">
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <p class="text-gray-400">Scroll to the bottom to learn more about the creator.</p>
-            </div>
-        </footer>
-    </div>
-    
-    <!-- "Who Am I" Hidden Section -->
-    <section id="whoami-section">
-        <button id="whoami-close-btn" title="Close">&times;</button>
-        <div class="text-center max-w-4xl mx-auto px-4 text-white">
-            <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">About Me</h2>
-            <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
-                I'm passionate about IT and a lifelong learner with a love for building, tinkering, and automating. This homelab is my canvas, where I experiment with enterprise-grade technologies, sharpen my DevOps skills, and host services that bring convenience and privacy to my digital life. It started with an old laptop and a dream, and has grown into the ecosystem you see a glimpse of here. My goal is to create a secure, efficient, and fun environment that supports my hobbies and professional growth. 
-            </p>
-            <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
-                When I'm not behind the screen, you can find me playing guitar, gaming, or exploring new tech trends. Feel free to reach out if you share similar interests or have questions about my setup!
-            </p>
-            <h3 class="text-3xl font-bold text-white mb-6 border-t border-gray-700 pt-8">Current Study</h3>
-            <ul class="list-none space-y-4 text-gray-300">
-                <li><strong class="text-indigo-400">Master of Information Technology (Software Development):</strong> Completing software engineering courses to strengthen my skills, with this TailwindCSS/node.js/Firebase and GeminiAPI AI calls to facilitate this project website as a start</li>
-                <li><strong class="text-indigo-400">Microsoft Certified: Azure Developer Associate:</strong> Learning to build end-to-end solutions in Microsoft Azure to create Azure Functions, implement and manage web apps, develop solutions utilizing Azure storage, and more.</li>
-            </ul>
-        </div>
-    </section>
-    <!-- AI / Info Modal -->
-    <div id="info-modal-backdrop" class="modal-backdrop hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[60]">
-        <div id="info-modal" class="modal bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-gray-700">
-                <h3 id="info-modal-title" class="text-xl font-bold text-white">AI Response</h3>
-                <button id="info-modal-close" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            <div id="info-modal-body" class="p-6 overflow-y-auto text-gray-300">
-                <div id="info-modal-loader" class="flex justify-center items-center h-40">
-                    <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
-                <div id="info-modal-content" class="prose prose-invert max-w-none"></div>
-            </div>
-            <div id="ai-modal-input-container" class="hidden p-4 border-t border-gray-700">
-                <div class="flex gap-2">
-                    <input type="text" id="ai-follow-up-input" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ask a follow-up question...">
-                    <button id="ai-follow-up-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                        Send
-                    </button>
+                <!-- Category Filter Buttons -->
+                <div class="flex flex-wrap gap-1.5 self-start sm:self-auto">
+                    <button class="filter-btn active" data-filter="all">ALL (40+)</button>
+                    <button class="filter-btn" data-filter="proxmox">PROXMOX 1 (CT/VM)</button>
+                    <button class="filter-btn" data-filter="proxmox2">PROXMOX 2 (CT/VM)</button>
+                    <button class="filter-btn" data-filter="node23">NODE-23 CONTAINERS</button>
+                    <button class="filter-btn" data-filter="node33">NODE-33 DEV &amp; CORE</button>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Contact Modal -->
-    <div id="contact-modal-backdrop" class="modal-backdrop hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[60]">
-        <div id="contact-modal" class="modal bg-gray-800 rounded-lg shadow-xl w-full max-w-lg">
-            <div class="flex justify-between items-center p-4 border-b border-gray-700">
-                <h3 class="text-xl font-bold text-white">Contact Me</h3>
-                <button id="contact-modal-close" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+
+            <!-- Comprehensive 40+ Container Grid -->
+            <div id="service-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 font-mono text-xs">
+                
+                <!-- PROXMOX 1 CTs and VMs -->
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('CT 102 Jellyfin', 'High-performance media streaming platform with hardware-accelerated video transcoding via Intel UHD 630. Mounts media libraries over restricted read-only NFS from node-33.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Jellyfin Media</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">CT 102</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Hardware-accelerated media server with Intel UHD 630 passthrough.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('CT 110 Docker-Apps (Immich)', 'Dedicated container hosting Immich photo and video backup suite paired with cAdvisor hardware telemetry collector.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Immich &amp; cAdvisor</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">CT 110</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Self-hosted photo/video backup suite with ML indexing &amp; cAdvisor.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('CT 111 Monitoring', 'Central observability stack executing Prometheus time-series metrics collection and Grafana dashboard visualization.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Prometheus &amp; Grafana</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">CT 111</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Central observability stack gathering cluster performance telemetry.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('CT 117 AudioMuse', 'Neural audio processing and generative sound experimentation suite running on 8 dedicated vCPU cores and 6 GB RAM.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">AudioMuse-AI</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">CT 117</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Neural audio processing and sound design container (8 vCPUs).</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('CT 119 Ops-Monitor', 'High-availability operational health monitoring platform executing Scrutiny SMART drive analysis and Uptime Kuma heartbeats.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Scrutiny &amp; Uptime Kuma</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">CT 119</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Hardware SMART analysis &amp; service uptime heartbeats.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('CT 120 Forgejo Runner', 'Automated CI/CD runner executing Docker-in-Docker (dind) workflows for continuous testing and builds on private repos.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Forgejo CI Runner</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">CT 120</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Automated CI/CD pipeline executing Docker-in-Docker builds.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('VM 150 Claude Worker', 'Dedicated operations worker VM hosting documentation wiki and central Dozzle logging hub.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Claude Worker VM</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">VM 150</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Dedicated engineering wiki &amp; central logging hub.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox" onclick="openAppModal('CT 106 Pi-hole (LAN)', 'Third redundant Pi-hole DNS sinkhole protecting local Wi-Fi clients.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Pi-hole (LXC)</span><span class="text-[9px] text-[#d77757] bg-[#d77757]/10 px-2 py-0.5 rounded border border-[#d77757]/20">CT 106</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Redundant DNS sinkhole container for LAN clients.</p>
+                </div>
+
+                <!-- PROXMOX 2 CTs and VMs -->
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox2" onclick="openAppModal('CT 112 Vaultwarden', 'Lightweight zero-knowledge AES-256 encrypted credential and secrets management vault written in Rust.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Vaultwarden</span><span class="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">CT 112</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Zero-knowledge client-encrypted secrets vault in Rust.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox2" onclick="openAppModal('CT 113 Forgejo Git', 'Private Git software forge managing version control, pull requests, and automated deployment webhooks.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Forgejo Git</span><span class="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">CT 113</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Self-hosted software forge for private git version control.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox2" onclick="openAppModal('CT 114 Firefly III', 'Financial bookkeeping and double-entry accounting platform paired with automated bank statement converters.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Firefly III Suite</span><span class="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">CT 114</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Personal financial bookkeeping &amp; automated statement converter.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox2" onclick="openAppModal('CT 115 Media Stack', 'Unified media streaming suite hosting Navidrome lossless FLAC streaming, Audiobookshelf podcast sync, and Kavita e-readers.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Media Stack (4 Apps)</span><span class="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">CT 115</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Navidrome FLAC, Audiobookshelf, Kavita, and scrobblers.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox2" onclick="openAppModal('CT 116 Paperless-ngx', 'Document management system utilizing optical character recognition (OCR), Tika parser, Gotenberg converter, and Redis caching.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Paperless &amp; Trilium</span><span class="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">CT 116</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Document OCR indexing pipeline, Tika, and Trilium notes.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox2" onclick="openAppModal('CT 118 Edge DMZ', 'Isolated perimeter DMZ hosting test reverse proxy configurations, CrowdSec intrusion detection, and security dashboards.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Edge Proxy DMZ</span><span class="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">CT 118</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Isolated reverse proxy DMZ with CrowdSec L7 inspection.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="proxmox2" onclick="openAppModal('VM 103 Docker', 'Dedicated virtual machine hosting isolated Docker environments and Portainer management.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Docker Sandbox VM</span><span class="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">VM 103</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Isolated virtualization sandbox for test containers.</p>
+                </div>
+
+                <!-- NODE-23 CONTAINERS -->
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('Caeljknet Homepage', 'High-performance Node.js/Express landing page with client-side 3D WebGL radar visualization and tactical HUD.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Caeljknet.com</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Main landing page with hardware-accelerated 3D radar.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('Umami Analytics', 'Privacy-first, cookie-free telemetry tracking visitor metrics across Caeljknet domains with zero third-party leakage.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Umami Analytics</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Self-hosted privacy-focused web analytics platform.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('Engineering Showcase', 'Interactive homelab and distributed systems showcase dashboard.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Engineering Showcase</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Interactive systems architecture and topology dashboard.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('Pi-hole DNS 2', 'Secondary redundant Pi-hole DNS sinkhole running on baremetal node-23.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Pi-hole DNS 2</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Secondary redundant DNS sinkhole blocking trackers.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('Home Assistant', 'Home automation controller managing local Zigbee and Matter sensor networks without cloud dependencies.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Home Assistant</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Local home automation hub operating without cloud dependencies.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('WireGuard Privacy Tunnel', 'Encrypted WireGuard egress tunnel keeping outbound automated indexers completely private.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">WireGuard Egress</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Encrypted WireGuard privacy gateway for indexers.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('Automated Media Indexers', 'Cataloging and indexing microservices running under strict network isolation.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Media Indexer Suite</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Automated media cataloging &amp; release indexers.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node23" onclick="openAppModal('Glance Dashboard', 'Ultra-clean status dashboard aggregating server feeds and system health.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Glance Dashboard</span><span class="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">NODE-23</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Aggregated feeds visualizing host states at a glance.</p>
+                </div>
+
+                <!-- NODE-33 DEV & CORE -->
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('Pi-hole 1 &amp; Unbound', 'Primary local DNS sinkhole coupled with Unbound recursive resolver verifying cryptographic DNSSEC keys.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Pi-hole 1 + Unbound</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Primary DNS sinkhole &amp; recursive DNSSEC validator.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('Nexus FastMCP Todo', 'Autonomous AI task kanban and Model Context Protocol state synchronization hub.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Nexus Todo FastMCP</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">AI task tracking kanban &amp; FastMCP state coordinator.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('Nexus Chat &amp; Inteliver', 'Asynchronous message broker and document intelligence pipeline powering autonomous agents.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Nexus Chat &amp; Inteliver</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Agent communication broker &amp; document intelligence.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('Heimdall Dashboard', 'Application portal and link orchestrator displaying all internal homelab services.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Heimdall Dashboard</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Centralized navigation portal for internal tools.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('Rustic REST Server', 'Append-only encrypted backup server storing deduplicated snapshots on the 1 TB fast tier.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Rustic REST Server</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Append-only encrypted snapshot backup server.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('Code-Server IDE', 'Dedicated cloud IDE running VS Code on server hardware with direct git integration.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">Code-Server IDE</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Full VS Code browser IDE running on baremetal.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('FreshRSS &amp; Radicale', 'Information feed aggregator paired with CalDAV/CardDAV calendar and contacts synchronization.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">FreshRSS &amp; Radicale</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Feed aggregator &amp; private CalDAV calendar sync.</p>
+                </div>
+
+                <div class="hub-stat-card space-y-2 service-item" data-category="node33" onclick="openAppModal('JARVIS &amp; Flask Core', 'Internal Flask APIs and JARVIS interface components.')">
+                    <div class="flex items-center justify-between"><span class="text-white font-medium">JARVIS Core &amp; APIs</span><span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">NODE-33</span></div>
+                    <p class="text-[11px] text-[#8c8c8c] font-sans">Backend application logic and telemetry sensors.</p>
+                </div>
             </div>
-            <div class="p-6">
-                <form id="contact-form">
-                    <div id="contact-form-content">
-                        <p class="text-gray-400 mb-4">Feel free to reach out. I'll get back to you as soon as I can.</p>
-                        <div class="mb-4">
-                            <label for="name" class="block text-gray-300 text-sm font-bold mb-2">Name</label>
-                            <input type="text" id="name" name="name" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div class="mb-4">
-                            <label for="email" class="block text-gray-300 text-sm font-bold mb-2">Email</label>
-                            <input type="email" id="email" name="email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div class="mb-6">
-                            <label for="message" class="block text-gray-300 text-sm font-bold mb-2">Message</label>
-                            <textarea id="message" name="message" rows="4" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                        </div>
-                        <div class="flex items-center justify-end">
-                            <button type="submit" id="contact-submit-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                Send Message
-                            </button>
-                        </div>
-                    </div>
-                    <div id="contact-success-message" class="hidden text-center py-8">
-                        <h4 class="text-2xl font-bold text-green-400 mb-2">Thank You!</h4>
-                        <p class="text-gray-300">Your message has been sent successfully.</p>
-                    </div>
-                </form>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 bg-black/60 py-8 text-center text-xs text-[#8c8c8c] font-mono mt-16">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <div>ENGINEERING SHOWCASE &bull; CAELJKNET.COM</div>
+            <div class="text-[10px] text-neutral-600">
+                PROXMOX VE 9 &bull; DUAL BAREMETAL HOSTS &bull; RESTRICTED NFS &bull; CLOUDFLARE WAF
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive App Details Modal -->
+    <div id="app-modal" class="modal-backdrop hidden" onclick="if(event.target === this) closeAppModal()">
+        <div class="hub-card p-6 max-w-lg w-full space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h4 id="modal-title" class="text-lg font-medium text-white">Service Details</h4>
+                <button onclick="closeAppModal()" class="text-[#8c8c8c] hover:text-white text-xl leading-none">&times;</button>
+            </div>
+            <p id="modal-desc" class="text-xs text-neutral-300 leading-relaxed font-sans"></p>
+            <div class="pt-3 border-t border-white/10 flex justify-end">
+                <button onclick="closeAppModal()" class="px-4 py-1.5 rounded bg-white/10 hover:bg-white/15 text-xs text-white font-mono transition-colors">
+                    CLOSE
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script type="module" src="./src/main.js"></script>
+    <!-- Contact Form Modal -->
+    <div id="contact-modal" class="modal-backdrop hidden" onclick="if(event.target === this) closeContactModal()">
+        <div class="hub-card p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h4 class="text-lg font-medium text-white">Transmit Message</h4>
+                <button onclick="closeContactModal()" class="text-[#8c8c8c] hover:text-white text-xl leading-none">&times;</button>
+            </div>
+            <form action="mailto:caeljknet@gmail.com" method="GET" class="space-y-3 font-mono text-xs">
+                <div>
+                    <label class="block text-[#8c8c8c] mb-1">YOUR EMAIL</label>
+                    <input type="email" name="subject" placeholder="sender@domain.com" required class="w-full px-3 py-2 rounded bg-black/60 border border-white/10 text-white focus:border-[#d77757] outline-none">
+                </div>
+                <div>
+                    <label class="block text-[#8c8c8c] mb-1">TRANSMISSION</label>
+                    <textarea name="body" rows="4" placeholder="Enter message here..." required class="w-full px-3 py-2 rounded bg-black/60 border border-white/10 text-white focus:border-[#d77757] outline-none resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded bg-[#d77757] hover:bg-[#eb9f7f] text-white font-medium transition-colors">
+                    TRANSMIT VIA SECURE MAIL
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Modal functions
+        function openAppModal(title, desc) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('app-modal').classList.remove('hidden');
+        }
+        function closeAppModal() {
+            document.getElementById('app-modal').classList.add('hidden');
+        }
+        function openContactModal() {
+            document.getElementById('contact-modal').classList.remove('hidden');
+        }
+        function closeContactModal() {
+            document.getElementById('contact-modal').classList.add('hidden');
+        }
+        document.getElementById('contact-btn').addEventListener('click', openContactModal);
+
+        // Search & Filter Logic
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const serviceItems = document.querySelectorAll('.service-item');
+        const searchInput = document.getElementById('service-search');
+
+        function applyFilters() {
+            const activeBtn = document.querySelector('.filter-btn.active');
+            const category = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            serviceItems.forEach(item => {
+                const itemCategory = item.getAttribute('data-category');
+                const text = item.innerText.toLowerCase();
+                const matchesCategory = (category === 'all' || itemCategory === category);
+                const matchesQuery = !query || text.includes(query);
+
+                if (matchesCategory && matchesQuery) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                applyFilters();
+            });
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilters);
+        }
+
+        // Vis.js Interactive Topology
+        function initDiagram() {
+            const container = document.getElementById('interactive-diagram');
+            if (!container) return;
+
+            const nodes = new vis.DataSet([
+                { id: 1, label: 'Cloudflare Edge\n(DDoS & WAF)', shape: 'box', color: { background: '#1c1917', border: '#d77757' }, font: { color: '#f0eee9', face: 'JetBrains Mono', size: 12 }, margin: 10 },
+                { id: 2, label: 'Perimeter Gateway\n(OPNsense SPI + CrowdSec)', shape: 'box', color: { background: '#0c4a6e', border: '#38bdf8' }, font: { color: '#f0eee9', face: 'JetBrains Mono', size: 12 }, margin: 10 },
+                { id: 3, label: 'proxmox (PVE 1)\n(i5-10500T, NVMe)', shape: 'box', color: { background: '#064e3b', border: '#34d399' }, font: { color: '#f0eee9', face: 'JetBrains Mono', size: 12 }, margin: 10 },
+                { id: 4, label: 'proxmox-two (PVE 2)\n(4 Cores, Lab Net)', shape: 'box', color: { background: '#064e3b', border: '#34d399' }, font: { color: '#f0eee9', face: 'JetBrains Mono', size: 12 }, margin: 10 },
+                { id: 5, label: 'node-23 (Host)\n(Web Apps, DC01, VPN)', shape: 'box', color: { background: '#451a03', border: '#f59e0b' }, font: { color: '#f0eee9', face: 'JetBrains Mono', size: 12 }, margin: 10 },
+                { id: 6, label: 'node-33 (ProDesk)\n(Fast CMR + 8TB SMR)', shape: 'box', color: { background: '#451a03', border: '#f59e0b' }, font: { color: '#f0eee9', face: 'JetBrains Mono', size: 12 }, margin: 10 },
+                { id: 7, label: 'Restricted NFS Bus\n(Media & Immich)', shape: 'box', color: { background: '#1c1917', border: '#ffc107' }, font: { color: '#f0eee9', face: 'JetBrains Mono', size: 12 }, margin: 10 },
+            ]);
+
+            const edges = new vis.DataSet([
+                { from: 1, to: 2, label: 'WAF Filter', color: { color: '#d77757' }, font: { color: '#8c8c8c', size: 10, face: 'JetBrains Mono' }, arrows: 'to' },
+                { from: 2, to: 5, label: 'Perimeter Ingress', color: { color: '#38bdf8' }, font: { color: '#8c8c8c', size: 10, face: 'JetBrains Mono' }, arrows: 'to' },
+                { from: 2, to: 3, label: 'Core LAN', color: { color: '#38bdf8' }, font: { color: '#8c8c8c', size: 10, face: 'JetBrains Mono' }, arrows: 'to' },
+                { from: 2, to: 4, label: 'Lab VLAN', color: { color: '#38bdf8' }, font: { color: '#8c8c8c', size: 10, face: 'JetBrains Mono' }, arrows: 'to' },
+                { from: 6, to: 7, label: 'Storage Export', color: { color: '#ffc107' }, font: { color: '#8c8c8c', size: 10, face: 'JetBrains Mono' }, arrows: 'to' },
+                { from: 7, to: 3, label: 'NFS Mount (ro/rw)', color: { color: '#34d399' }, font: { color: '#8c8c8c', size: 10, face: 'JetBrains Mono' }, arrows: 'to' },
+                { from: 5, to: 6, label: 'FastBackup & Rustic', color: { color: '#f59e0b' }, font: { color: '#8c8c8c', size: 10, face: 'JetBrains Mono' }, arrows: 'to, from' },
+            ]);
+
+            const data = { nodes: nodes, edges: edges };
+            const options = {
+                physics: {
+                    solver: 'forceAtlas2Based',
+                    forceAtlas2Based: { gravitationalConstant: -60, centralGravity: 0.01, springLength: 110, springConstant: 0.08 }
+                },
+                interaction: { hover: true, zoomView: true, dragView: true }
+            };
+            const network = new vis.Network(container, data, options);
+            network.on("click", function(params) {
+                if (params.nodes.length > 0) {
+                    const id = params.nodes[0];
+                    const node = nodes.get(id);
+                    openAppModal(node.label.replace('\n', ' - '), 'Part of the segmented high-availability homelab cluster. Governed by zero-trust security boundaries, restricted NFS buses, and automated state monitoring.');
+                }
+            });
+        }
+        window.addEventListener('load', initDiagram);
+    </script>
 </body>
 </html>
